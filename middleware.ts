@@ -1,24 +1,29 @@
-// middleware.ts
 import { clerkMiddleware, createRouteMatcher } from "@clerk/nextjs/server";
+import { NextResponse } from "next/server";
 
-// Qorunan səhifələr
 const isProtectedRoute = createRouteMatcher([
-  "/dashboard(.*)",
-  "/profile(.*)",
-  "/settings(.*)",
+  "/",
+  "/upcoming",
+  "/previous",
+  "/recordings",
+  "/personal-room",
+  "/meeting(.*)",
 ]);
 
-export default clerkMiddleware((auth, req) => {
-  if (isProtectedRoute(req)) {
-    auth().protect(); // Bu səhifələrə yalnız login olmuş istifadəçilər buraxılır
+export default clerkMiddleware(async (auth, req) => {
+  const { userId } = await auth();
+
+  if (isProtectedRoute(req) && !userId) {
+    const signInUrl = new URL("/sign-in", req.url);
+    return NextResponse.redirect(signInUrl);
   }
+
+  return NextResponse.next(); 
 });
 
-// Middleware hansı route-larda işləyəcək
 export const config = {
   matcher: [
-    "/((?!.*\\..*|_next).*)", // bütün səhifələr üçün
+    "/((?!_next|.*\\..*).*)",
     "/",
-    "/(api|trpc)(.*)",
   ],
 };
